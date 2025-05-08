@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Snake Game by g4nggaaa</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: 'Arial', sans-serif;
+      background: url('https://cdn.idntimes.com/content-images/community/2023/06/whatsapp-image-2023-06-25-at-110424-pm-770cbc2889bb4c14bf5042be7b505d5d-6a73b3d4e83733787d0b79dd7942d764.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      color: #fff;
+    }
+    h1 {
+      font-size: 40px;
+      color: #fff;
+      text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+    }
+    canvas {
+      background: rgba(0, 0, 0, 0.8);
+      border: 3px solid lime;
+      box-shadow: 0 0 20px lime;
+    }
+    button, select {
+      margin: 10px;
+      padding: 12px 25px;
+      font-weight: bold;
+      background: #5cdb95;
+      border: 2px solid #45a29e;
+      color: #1f2833;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      transition: background 0.3s ease;
+    }
+    button:hover, select:hover {
+      background: #45a29e;
+    }
+    #scoreboard {
+      margin: 15px;
+      font-size: 24px;
+      color: #fff;
+    }
+    #scoreboard span {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🐍 Snake Game - by g4nggaaa</h1>
+
+  <div id="scoreboard">
+    Score: <span id="score">0</span> | High Score: <span id="highscore">0</span>
+  </div>
+
+  <canvas id="game" width="400" height="400"></canvas><br>
+
+  <div>
+    <button onclick="changeDir('UP')">⬆️</button><br>
+    <button onclick="changeDir('LEFT')">⬅️</button>
+    <button onclick="changeDir('DOWN')">⬇️</button>
+    <button onclick="changeDir('RIGHT')">➡️</button><br>
+  </div>
+
+  <div>
+    <label for="speed">Kecepatan:</label>
+    <select id="speed" onchange="setSpeed()">
+      <option value="200">Lambat</option>
+      <option value="150" selected>Sedang</option>
+      <option value="100">Cepat</option>
+      <option value="70">Sangat Cepat</option>
+    </select>
+    <button onclick="startGame()">▶️ Mulai</button>
+    <button onclick="resetGame()">🔄 Reset</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const box = 20;
+    const canvasSize = canvas.width;
+    let dir = "RIGHT";
+    let snake = [];
+    let food = {};
+    let score = 0;
+    let highScore = localStorage.getItem("highscore") || 0;
+    let interval;
+
+    document.getElementById("highscore").innerText = highScore;
+
+    const eatSound = new Audio("https://www.fesliyanstudios.com/play-mp3/387");
+    const deathSound = new Audio("https://www.fesliyanstudios.com/play-mp3/6677");
+    const winSound = new Audio("https://www.fesliyanstudios.com/play-mp3/6726");
+
+    function randomPosition() {
+      return {
+        x: Math.floor(Math.random() * (canvasSize / box)) * box,
+        y: Math.floor(Math.random() * (canvasSize / box)) * box,
+      };
+    }
+
+    function setSpeed() {
+      clearInterval(interval);
+      const speed = parseInt(document.getElementById("speed").value);
+      interval = setInterval(draw, speed);
+    }
+
+    function resetGame() {
+      clearInterval(interval);
+      snake = [{ x: 9 * box, y: 9 * box }];
+      food = randomPosition();
+      score = 0;
+      dir = "RIGHT";
+      document.getElementById("score").innerText = score;
+    }
+
+    function startGame() {
+      alert("🎮 Selamat bermain!");
+      resetGame();
+      setSpeed();
+    }
+
+    function changeDir(newDir) {
+      if ((newDir === "LEFT" && dir !== "RIGHT") ||
+          (newDir === "RIGHT" && dir !== "LEFT") ||
+          (newDir === "UP" && dir !== "DOWN") ||
+          (newDir === "DOWN" && dir !== "UP")) {
+        dir = newDir;
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      const keyMap = {
+        ArrowLeft: "LEFT",
+        ArrowUp: "UP",
+        ArrowRight: "RIGHT",
+        ArrowDown: "DOWN"
+      };
+      if (keyMap[e.key]) changeDir(keyMap[e.key]);
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, canvasSize, canvasSize);
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "#00FF00" : "#006400";  // Color kepala berbeda
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
+
+      ctx.fillStyle = "#FF0000";  // Warna makanan
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let head = { x: snake[0].x, y: snake[0].y };
+      if (dir === "LEFT") head.x -= box;
+      if (dir === "RIGHT") head.x += box;
+      if (dir === "UP") head.y -= box;
+      if (dir === "DOWN") head.y += box;
+
+      if (head.x < 0 || head.x >= canvasSize || head.y < 0 || head.y >= canvasSize) {
+        deathSound.play();
+        alert("💥 Game Over! Score: " + score);
+        if (score > highScore) localStorage.setItem("highscore", score);
+        resetGame();
+        return;
+      }
+
+      for (let i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          deathSound.play();
+          alert("💀 Kamu menabrak tubuhmu sendiri! Score: " + score);
+          if (score > highScore) localStorage.setItem("highscore", score);
+          resetGame();
+          return;
+        }
+      }
+
+      if (head.x === food.x && head.y === food.y) {
+        eatSound.play();
+        score++;
+        document.getElementById("score").innerText = score;
+        if (score >= 10) winSound.play();
+        food = randomPosition();
+      } else {
+        snake.pop();
+      }
+
+      snake.unshift(head);
+    }
+  </script>
+</body>
+</html>
